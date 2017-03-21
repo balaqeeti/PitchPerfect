@@ -28,10 +28,33 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
     }
     
     @IBAction func recordAudio(_ sender: AnyObject) {
-        recordingLabel.text = "Recording in Progress"
-        stopRecordingButton.isEnabled = true
-        startRecordingButton.isEnabled = false
-        
+        setUIState(isRecording: true, recordingText: recordingLabel.text!)
+        prepareAudio()
+    }
+  
+    @IBAction func haltAudio(_ sender: Any) {
+        setUIState(isRecording: false, recordingText: recordingLabel.text!)
+        audioRecorder.stop()
+        let audioSession = AVAudioSession.sharedInstance()
+        try! audioSession.setActive(false)
+    }
+    
+    func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool){
+        if flag {
+        performSegue(withIdentifier: "stopRecording", sender: audioRecorder.url)
+        } else {
+            print("recording was not sucessful")
+        }
+    }
+    
+    // Refactored Code from previous lines
+    func setUIState(isRecording: Bool, recordingText: String){
+        recordingLabel.text = (isRecording) ? "Recording in Progress" : "Tap to Record"
+        startRecordingButton.isEnabled = !isRecording
+        stopRecordingButton.isEnabled = isRecording
+    }
+    
+    func prepareAudio(){
         let dirPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] as String
         let recordingName = "recordedVoice.wav"
         let pathArray = [dirPath, recordingName]
@@ -48,24 +71,10 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
         audioRecorder.prepareToRecord()
         audioRecorder.record()
     }
-  
-    @IBAction func haltAudio(_ sender: Any) {
-        startRecordingButton.isEnabled = true
-        stopRecordingButton.isEnabled = false
-        recordingLabel.text = "Tap to Record"
-        audioRecorder.stop()
-        let audioSession = AVAudioSession.sharedInstance()
-        try! audioSession.setActive(false)
-    }
     
-    func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool){
-        if flag {
-        performSegue(withIdentifier: "stopRecording", sender: audioRecorder.url)
-        } else {
-            print("recording was not sucessful")
-        }
-    }
-    
+}
+// Segue Method
+extension RecordSoundsViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "stopRecording" {
             let playSoundsVC = segue.destination as! PlaySoundsViewController
@@ -73,8 +82,4 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
             playSoundsVC.recordedAudioURL = recordedAudioURL
         }
     }
-
-    
-
 }
-
